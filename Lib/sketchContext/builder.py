@@ -13,10 +13,27 @@
 #
 #     sketchbuilder.py
 #
-from pagebot.contexts.builders.basebuilder import BaseBuilder
+from pagebot.contexts.basecontext.basebuilder import BaseBuilder
+from sketchapp2py.sketchapi import SketchApi
 
 class SketchBuilder(BaseBuilder):
     PB_ID = 'Sketch'
+
+    def __init__(self, path=None, **kwargs):
+    	"""
+        >>> import sketchapp2py
+        >>> from pagebot.toolbox.transformer import path2Dir
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+		>>> b = SketchBuilder(path)
+		>>> b.sketchApi
+		<SketchApi path=TemplateSquare.sketch>
+		>>> sketchPage = b.sketchApi.selectPage(0)
+		>>> sketchPage, sketchPage.frame
+		(<page name=Page 1>, <rect x=0 y=0 w=0 h=0>)
+
+    	"""
+    	super().__init__(**kwargs)
+    	self.sketchApi = SketchApi(path)
 
     def frameDuration(self, frameDuration):
         pass
@@ -27,5 +44,10 @@ class SketchBuilder(BaseBuilder):
     def fill(self, e, g, b, alpha=None):
         pass
 
-sketchBuilder = SketchBuilder()
+
+if __name__ == '__main__':
+  import doctest
+  import sys
+  sys.exit(doctest.testmod()[0])
+
 

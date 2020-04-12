@@ -13,7 +13,7 @@
 #    Supporting Sketch, https://github.com/Zahlii/python_sketch_api
 # -----------------------------------------------------------------------------
 #
-#    sketchcontext.py
+#    test.py
 #
 #    Inspace sketch file:
 #    https://xaviervia.github.io/sketch2json/

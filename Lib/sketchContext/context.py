@@ -22,16 +22,23 @@
 #  This description is not complete.
 #  Additions made where found in the Reading specification of this context.
 #
+#  Eqivalent classes on PageBot <--> SketchApp2Py
+#  Publication       Sketch file
+#  Document          SketchApi
+#  Page              SketchPage
+#  Page.elements     SketchPage.layers = ArtBoards
+#  Page.elements     SketchArtBoard.layers
+#
+#  The SketchContext is, together with the 
 from pagebot.document import Document
 from pagebot.constants import FILETYPE_SKETCH, A4
-from pagebot.contexts.base.context import BaseContext
-from pagebot.contexts.builders.sketchbuilder import SketchBuilder
+from pagebot.contexts.basecontext.basecontext import BaseContext
+from sketchcontext.builder import SketchBuilder
 #from pagebot.toolbox.color import color
 #from pagebot.toolbox.units import asNumber, pt
 #from pagebot.toolbox.transformer import path2Dir, path2Extension
 from pagebot.elements import *
-
-from sketchapi import *
+from sketchapp2py.sketchapi import *
 
 class SketchContext(BaseContext):
 
@@ -39,22 +46,28 @@ class SketchContext(BaseContext):
 
     DOCUMENT_CLASS = Document
 
-    def __init__(self):
+    def __init__(self, path=None):
         """Constructor of Sketch context.
 
-        >>> context = SketchContext()
+        >>> import sketchapp2py
+        >>> from pagebot.toolbox.transformer import path2Dir
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> context = SketchContext(path)
         >>> doc = context.getDocument()
         >>> doc.w, doc.h
-        (576pt, 783pt)
+        (300pt, 400pt)        
         """
         super().__init__()
         self.name = self.__class__.__name__
-        self.b = SketchBuilder()
+        self.b = SketchBuilder(path)
         self.shape = None # Current open shape
         self.fileType = FILETYPE_SKETCH
 
     def read(self, path):
-        #self.b = SketchBuilder(path)
+        """
+        >>>
+        """
+        self.b = SketchBuilder(path)
         pass
 
     def _createElements(self, sketchLayer, e):
@@ -81,11 +94,17 @@ class SketchContext(BaseContext):
 
     def getDocument(self):
         """Create a new tree of Document/Page/Element instances, interpreting
-        Artboards."""
-        artboards = self.b.getArtboards()
+        Sketch Artboards as pages.
+
+        >>>
+        """
+        doc = Document(w=300, h=400, contect=self)
+        self.b
+        """
+        sketchPages = self.b.getArtBoards()
         doc = None
         page = None
-        for artboard in self.b.getArtboards():
+        for artboard in self.b.getArtBoards():
             if page is None:
                 doc = Document(w=artboard.width, h=artboard.height)
                 page = doc[1]
@@ -93,7 +112,7 @@ class SketchContext(BaseContext):
                 page = page.next
             # Create the element, and copy data from the artboard layers where necessary.
             self._createElements(page, artboard)
-
+        """
         return doc
 
     def save(self):
