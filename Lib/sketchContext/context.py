@@ -23,16 +23,17 @@
 #  Additions made where found in the Reading specification of this context.
 #
 #  Eqivalent classes on PageBot <--> SketchApp2Py
-#  Publication       Sketch file
-#  Document          SketchApi
-#  Page              SketchPage
-#  Page.elements     SketchPage.layers = ArtBoards
+#  Publication       SketchApi/Sketch file
+#  Document          SketchPage
+#  Document.pages    SketchArtBoard[]
 #  Page.elements     SketchArtBoard.layers
 #
 #  The SketchContext is, together with the 
 from pagebot.document import Document
 from pagebot.constants import FILETYPE_SKETCH, A4
 from pagebot.contexts.basecontext.basecontext import BaseContext
+from pagebot.toolbox.units import units
+
 from sketchcontext.builder import SketchBuilder
 #from pagebot.toolbox.color import color
 #from pagebot.toolbox.units import asNumber, pt
@@ -52,23 +53,51 @@ class SketchContext(BaseContext):
         >>> import sketchapp2py
         >>> from pagebot.toolbox.transformer import path2Dir
         >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
-        >>> context = SketchContext(path)
+        >>> context = SketchContext(path) # Context now interacts with the file.
+        
+        >>> # Create a PageBot Document instance, reading the Sketch file data as source.
         >>> doc = context.getDocument()
-        >>> doc.w, doc.h
-        (300pt, 400pt)        
+        >>> page = doc[1]
+        >>> page
+        <Page #1 default (300pt, 400pt)>
+
         """
         super().__init__()
         self.name = self.__class__.__name__
-        self.b = SketchBuilder(path)
-        self.shape = None # Current open shape
+        # Keep open connector to the file data. If path is None, a default resource
+        # files is opened.
+        self.b = SketchBuilder(path) 
         self.fileType = FILETYPE_SKETCH
+        self.shape = None # Current open shape
+        self.w = self.h = None # Optional default context size, overwriting the Sketch document.
+
+    def setSize(self, w=None, h=None):
+        """Optional default document size. If not None, overwriting the size of the 
+        open Sketch document.
+
+        >>> context = SketchContext()
+        >>> context.w is None and context.h is None
+        True
+        >>> context.setSize(w=300)
+        >>> context.w
+        300pt
+        """
+        self.w = units(w)
+        self.h = units(h)
 
     def read(self, path):
         """
-        >>>
+        >>> import sketchapp2py
+        >>> context = SketchContext() # Context now interacts with the default Resource file.
+        >>> context.b.sketchApi.filePath.split('/')[-1]
+        'Template.sketch'
+        >>> from pagebot.toolbox.transformer import path2Dir
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> context.read(path)
+        >>> context.b.sketchApi.filePath.split('/')[-1] # Listening to another file now.
+        'TemplateSquare.sketch'
         """
         self.b = SketchBuilder(path)
-        pass
 
     def _createElements(self, sketchLayer, e):
         """Copy the attributes of the sketchLayer into the element where
@@ -98,7 +127,7 @@ class SketchContext(BaseContext):
 
         >>>
         """
-        doc = Document(w=300, h=400, contect=self)
+        doc = Document(w=300, h=400, context=self)
         self.b
         """
         sketchPages = self.b.getArtBoards()
@@ -115,7 +144,17 @@ class SketchContext(BaseContext):
         """
         return doc
 
-    def save(self):
+    def save(self, path=None):
+        """Save the current builder data into Sketch file, indicated by path. 
+        >>> import sketchapp2py
+        >>> from pagebot.toolbox.transformer import path2Dir
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> context = SketchContext(path) # Context now interacts with the file.
+
+        """
+        if path is None:
+            path = self.b.sketchApi.filePath
+        self.b.sketchApi.save(path)
         pass
 
     def newDocument(self, w, h):
