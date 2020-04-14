@@ -14,6 +14,8 @@
 #     sketchbuilder.py
 #
 from pagebot.contexts.basecontext.basebuilder import BaseBuilder
+from pagebot.toolbox.units import upt
+
 from sketchapp2py.sketchapi import SketchApi
 
 class SketchBuilder(BaseBuilder):
@@ -25,15 +27,19 @@ class SketchBuilder(BaseBuilder):
         >>> from pagebot.toolbox.transformer import path2Dir
         >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
 		>>> b = SketchBuilder(path)
-		>>> b.sketchApi
+        >>> b
+        <SketchBuilder path=TemplateSquare.sketch>
+		>>> b.api
 		<SketchApi path=TemplateSquare.sketch>
-		>>> sketchPage = b.sketchApi.selectPage(0)
+		>>> sketchPage = b.api.selectPage(0)
 		>>> sketchPage, sketchPage.frame
 		(<page name=Page 1>, <rect x=0 y=0 w=0 h=0>)
-
     	"""
     	super().__init__(**kwargs)
-    	self.sketchApi = SketchApi(path)
+    	self.api = SketchApi(path)
+
+    def __repr__(self):
+        return '<%s path=%s>' % (self.__class__.__name__, self.api.sketchFile.path.split('/')[-1])
 
     def frameDuration(self, frameDuration):
         pass
@@ -42,6 +48,17 @@ class SketchBuilder(BaseBuilder):
         pass
 
     def fill(self, e, g, b, alpha=None):
+        pass
+
+    def _get_pages(self):
+        return self.api.getPages()
+    pages = property(_get_pages)
+
+    def _get_size(self):
+        return upt(self.api.getSize())
+    size = property(_get_size)
+
+    def restore(self):
         pass
 
 
