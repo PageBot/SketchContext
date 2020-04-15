@@ -38,8 +38,10 @@ from pagebot.document import Document
 from pagebot.constants import FILETYPE_SKETCH, A4
 from pagebot.contexts.basecontext.basecontext import BaseContext
 from pagebot.toolbox.units import units
+from pagebot.toolbox.color import color
 
 from sketchcontext.builder import SketchBuilder
+from sketchcontext.sketchstring import SketchString
 #from pagebot.toolbox.color import color
 #from pagebot.toolbox.units import asNumber, pt
 #from pagebot.toolbox.transformer import path2Dir, path2Extension
@@ -107,39 +109,71 @@ class SketchContext(BaseContext):
         self.b = SketchBuilder(path)
         return self.b.api
 
+    def getNameTree(self, layer, t=None, tab=0):
+        if t is None:
+            t = ''
+        t += '%s%s\n' % (tab*'\t', layer)
+        if hasattr(layer, 'layers'):
+            for child in layer.layers:
+                self.getNameTree(child, t, tab+1)
+        return t
+
+    def _extractFill(self, layer):
+        if hasattr(layer, 'style') and hasattr(layer.style, 'fills') and layer.style.fills:
+            sketchColor = layer.style.fills[0].color
+            return color(r=sketchColor.red, g=sketchColor.green, b=sketchColor.blue)
+        return color(1, 0, 0)
+
     def _createElements(self, sketchLayer, e):
         """Copy the attributes of the sketchLayer into the element where
         necessary.
 
         """
-        if hasattr(sketchLayer, 'frame'):
-            frame = sketchLayer.frame
-            e.x = frame.x
-            e.y = frame.y
-            e.w = frame.w
-            e.h = frame.h
+        for layer in sketchLayer.layers:
+            frame = layer.frame
+            y = e.h - frame.h - frame.y # Flip the y-axis
+            if isinstance(layer, (SketchGroup, SketchShapeGroup)):
+                fillColor = self._extractFill(layer)
+                child = newGroup(name=layer.name, parent=e, sId=layer.do_objectID,
+                    x=frame.x, y=y, w=frame.w, h=frame.h)
+                self._createElements(layer, child)
+            
+            elif isinstance(layer, SketchRectangle):
+                fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
+                newRect(name=layer.name, parent=e, sId=layer.do_objectID, 
+                    x=frame.x, y=y, w=frame.w, h=frame.h, 
+                    fill=fillColor)
+            
+            elif isinstance(layer, SketchOval):
+                fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
+                newOval(name=layer.name, parent=e, sId=layer.do_objectID, 
+                    x=frame.x, y=y, w=frame.w, h=frame.h, 
+                    fill=fillColor)
+            
+            elif isinstance(layer, SketchText):
+                fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
+                newTextBox(SketchString(layer.attributedString), name=layer.name, parent=e, 
+                    sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, 
+                    textFill=fillColor)
 
-        if isinstance(sketchLayer, (SketchArtboard, SketchLayer, SketchGroup, SketchBitmap)): # There are child layers
-            for layer in sketchLayer.layers:
+            elif isinstance(layer, SketchBitmap):
+                # All internal Sketch file images are converted to .png
+                # SketchApp2Py converts the internal names with long id's to their object
+                # names and copies them into a parallel folder, indicated by self.b.api.sketchFile
+                path = self.b.api.sketchFile.imagesPath + layer.name + '.png' 
                 frame = layer.frame
-                fillColor = (random(), random(), random())
-                if isinstance(layer, (SketchGroup, SketchShapeGroup)):
-                    child = newGroup(name=layer.name, parent=e, sId=layer.do_objectID,
-                        x=frame.x, y=e.h + frame.y - frame.h, w=frame.w, h=frame.h, fill=fillColor)
-                    self._createElements(layer, child)
-                elif isinstance(layer, SketchRectangle):
-                    newRect(name=layer.name, parent=e, sId=layer.do_objectID, 
-                        x=frame.x, y=e.h - frame.y - frame.h, w=frame.w, h=frame.h, fill=fillColor)
-                elif isinstance(layer, SketchOval):
-                    newOval(name=layer.name, parent=e, sId=layer.do_objectID, 
-                        x=frame.x, y=e.h - frame.y - frame.h, w=frame.w, h=frame.h, fill=fillColor)
-                elif isinstance(layer, SketchBitmap):
-                    path = self.b.api.sketchFile.imagesPath + layer.name + '.png'
-                    frame = layer.frame
-                    child = newImage(path=path, name=layer.name, parent=e, sId=layer.do_objectID,
-                        x=frame.x, y=e.h - frame.y - frame.h, w=frame.w, h=frame.h)
-                else:
-                    print('==@@@===', layer)
+                newImage(path=path, name=layer.name, parent=e, sId=layer.do_objectID,
+                    x=frame.x, y=y, w=frame.w, h=frame.h)
+            
+            elif isinstance(layer, SketchSymbolInstance):
+                # For now only show the Symbol name.
+                frame = layer.frame
+                newTextBox('[%s]' % layer.name, name=layer.name, parent=e, 
+                    sId=layer.do_objectID, fill=0.9, textFill=0, font='Verdana', fontSize=12,
+                    x=frame.x, y=y, w=frame.w, h=frame.h)
+
+            else:
+                print('Unsupported layer type', layer)
 
     def readDocument(self, doc):
         """Read Page/Element instances from the SketchApi and fill the Document
@@ -158,27 +192,19 @@ class SketchContext(BaseContext):
         """
         sketchPages = self.b.pages # Collect the list of SketchPage instance 
         doc.w, doc.h = self.b.size
+        #assert doc.originTop # For now, make sure the origin of the document is set on top.
+        
         page = doc[1]
         for pIndex, sketchPage in enumerate(sketchPages): 
             artboards = sketchPage.layers
-            for abIndedx, artboard in enumerate(artboards):
+            for artboard in artboards:
+                page.w = artboard.frame.w
+                page.h = artboard.frame.h
                 self._createElements(artboard, page)
                 if pIndex < len(artboards)-1:
                     page = page.next
             if pIndex < len(sketchPages)-1:
                 page = page.next
-        """
-        doc = None
-        page = None
-        for artboard in self.b.getArtBoards():
-            if page is None:
-                doc = Document(w=artboard.width, h=artboard.height)
-                page = doc[1]
-            else:
-                page = page.next
-            # Create the element, and copy data from the artboard layers where necessary.
-            self._createElements(page, artboard)
-        """
 
     def save(self, path=None):
         """Save the current builder data into Sketch file, indicated by path. 
@@ -200,7 +226,6 @@ class SketchContext(BaseContext):
         if path is None:
             path = self.b.sketchApi.filePath
         self.b.api.save(path)
-        pass
 
     def newDocument(self, w, h):
         pass
