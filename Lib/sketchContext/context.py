@@ -68,7 +68,7 @@ class SketchContext(BaseContext):
         >>>
         """
         self.b = SketchBuilder(path)
-        pass
+        return self.b
 
     def _createElements(self, sketchLayer, e):
         """Copy the attributes of the sketchLayer into the element where
