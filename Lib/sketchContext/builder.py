@@ -29,7 +29,7 @@ class SketchBuilder(BaseBuilder):
 		<SketchApi path=TemplateSquare.sketch>
 		>>> sketchPage = b.sketchApi.selectPage(0)
 		>>> sketchPage, sketchPage.frame
-		(<page name=Page 1>, <rect x=0 y=0 w=0 h=0>)
+		(<SketchPage name=Page 1>, <SketchRect x=0 y=0 w=0 h=0>)
 
     	"""
     	super().__init__(**kwargs)

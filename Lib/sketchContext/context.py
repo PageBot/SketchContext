@@ -55,7 +55,7 @@ class SketchContext(BaseContext):
         >>> context = SketchContext(path)
         >>> doc = context.getDocument()
         >>> doc.w, doc.h
-        (300pt, 400pt)        
+        (300pt, 400pt)
         """
         super().__init__()
         self.name = self.__class__.__name__
