@@ -37,16 +37,14 @@ from random import random
 from pagebot.document import Document
 from pagebot.constants import FILETYPE_SKETCH, A4
 from pagebot.contexts.basecontext.basecontext import BaseContext
-from pagebot.toolbox.units import units
+from pagebot.contexts.basecontext.babelstring import BabelString
+from pagebot.elements import *
+from pagebot.constants import *
 from pagebot.toolbox.color import color
+from pagebot.toolbox.units import pt, units, upt
 
 from sketchcontext.builder import SketchBuilder
-from sketchcontext.sketchstring import SketchString
-#from pagebot.toolbox.color import color
-#from pagebot.toolbox.units import asNumber, pt
-#from pagebot.toolbox.transformer import path2Dir, path2Extension
-from pagebot.elements import *
-from sketchapp2py.sketchapi import *
+from sketchapp2py.sketchclasses import *
 
 class SketchContext(BaseContext):
 
@@ -67,7 +65,7 @@ class SketchContext(BaseContext):
         >>> context.readDocument(doc)
         >>> page = doc[1]
         >>> page
-        <Page #1 default (576pt, 783pt) E(6)>
+        <Page #1 default (576pt, 783pt) E(7)>
 
         """
         super().__init__()
@@ -122,7 +120,7 @@ class SketchContext(BaseContext):
         if hasattr(layer, 'style') and hasattr(layer.style, 'fills') and layer.style.fills:
             sketchColor = layer.style.fills[0].color
             return color(r=sketchColor.red, g=sketchColor.green, b=sketchColor.blue)
-        return color(1, 0, 0)
+        return color(0.5)
 
     def _createElements(self, sketchLayer, e):
         """Copy the attributes of the sketchLayer into the element where
@@ -141,20 +139,17 @@ class SketchContext(BaseContext):
             elif isinstance(layer, SketchRectangle):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
                 newRect(name=layer.name, parent=e, sId=layer.do_objectID, 
-                    x=frame.x, y=y, w=frame.w, h=frame.h, 
-                    fill=fillColor)
+                    x=frame.x, y=y, w=frame.w, h=frame.h, fill=fillColor)
             
             elif isinstance(layer, SketchOval):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
                 newOval(name=layer.name, parent=e, sId=layer.do_objectID, 
-                    x=frame.x, y=y, w=frame.w, h=frame.h, 
-                    fill=fillColor)
+                    x=frame.x, y=y, w=frame.w, h=frame.h, fill=fillColor)
             
             elif isinstance(layer, SketchText):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
-                newTextBox(SketchString(layer.attributedString), name=layer.name, parent=e, 
-                    sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, 
-                    textFill=fillColor)
+                newTextBox(self.asBabelString(layer.attributedString), name=layer.name, parent=e, 
+                    sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, textFill=fillColor)
 
             elif isinstance(layer, SketchBitmap):
                 # All internal Sketch file images are converted to .png
@@ -184,11 +179,15 @@ class SketchContext(BaseContext):
         >>> from pagebot.document import Document
         >>> from pagebot.toolbox.transformer import path2Dir
         >>> from pagebot.document import Document
-        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateText.sketch'
         >>> context = SketchContext(path=path) # Context now interacts with the default file.
         >>> # Create a PageBot Document instance, reading the current Sketch file data as source.
         >>> doc = Document(name='TestReadDocument')
         >>> context.readDocument(doc) 
+        >>> page = doc[1]
+        >>> e = page.elements[0]
+        >>> e
+        TextBox:Type & styles ([137pt, 134pt], [518pt, 100pt]) S(13)
         """
         sketchPages = self.b.pages # Collect the list of SketchPage instance 
         doc.w, doc.h = self.b.size
@@ -253,6 +252,115 @@ class SketchContext(BaseContext):
 
     def getGlyphPath(self, glyph, p=None, path=None):
         pass
+
+    def asBabelString(self, sas):
+        """Convert the SketchAttributedString skText into a generic BabelString.
+
+        * https://developer.apple.com/documentation/foundation/nsattributedstring
+        * https://developer.apple.com/documentation/coretext/ctframesetter-2eg
+
+        >>> import sketchapp2py
+        >>> from sketchapp2py.sketchapi import SketchApi
+        >>> from pagebot.toolbox.transformer import path2Dir
+        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateText.sketch'
+        >>> context = SketchContext(path)
+        >>> skTextBox = context.b.artboards[0].layers[0] # Find the Sketch text box
+        >>> sas = skTextBox.attributedString # SketchText inside the box
+        >>> sas
+        <SketchAttributedString>
+        >>> len(sas.attributes)
+        3
+        >>> bs = context.asBabelString(sas) # Convert to generic BabelString
+        >>> len(bs.runs) # We originally had 3 typographic parameter runs
+        3
+        >>> bs # Represented by joining text strings of all runs
+        $Type & sty...$
+        >>> bs.runs[0].s, bs.runs[0].style['font'], bs.runs[0].style['fontSize']
+        ('Type ', 'Proforma-Book', 90pt)
+        >>> bs.runs[1].s, bs.runs[1].style['font'], bs.runs[1].style['fontSize']
+        ('&', 'Proforma-Book', 200pt)
+        >>> sas2 = context.fromBabelString(bs) # New conversion
+        >>> sas == sas2 # Bi-directional conversion works
+        True
+        >>> # Now change the BabelString
+        >>> bs.runs[0].style['font'] = 'Verdana-Bold' 
+        >>> bs.runs[1].style['font'] = 'Verdana-Italic' 
+        >>> bs.runs[1].style['textFill'] = color(1, 0, 0)
+        >>> bs.runs[2].style['textFill'] = color(1, 0, 0.5)
+        >>> bs.runs[2].s = ' changed' # Change text of the run
+        >>> sas2 = context.fromBabelString(bs) # New conversion
+        >>> skTextBox.attributedString = sas2
+        >>> context.save('_export/TemplateTextChanged.sketch') # Save as other document
+        >>> bs2 = context.asBabelString(sas2) # Convert back to pbs
+        >>> bs == bs2 # This should be identical, after bi-directional conversion.
+        True
+        """
+        assert isinstance(sas, SketchAttributedString), "%s.asBabelString: @sas has class %s" % (
+            self.__class__.__name__, sas.__class__.__name__)
+        ALIGNMENTS = {0: LEFT, 1: RIGHT, 2: CENTER, None: JUSTIFIED}
+        bsResult = None
+        for attrs in sas.attributes:
+            fd = attrs.attributes.MSAttributedStringFontAttribute.attributes
+            cc = attrs.attributes.MSAttributedStringColorAttribute
+            textFill = color(r=cc.red, g=cc.green, b=cc.blue, a=cc.alpha)
+            verticalAlignment = attrs.attributes.textStyleVerticalAlignmentKey
+            tracking = attrs.attributes.kerning # Wrong Sketch name for tracking
+            paragraphStyle = attrs.attributes.paragraphStyle
+            
+            style = dict(font=fd.name, fontSize=pt(fd.size), textFill=textFill, 
+                tracking=tracking, xAlign=ALIGNMENTS.get(paragraphStyle.alignment, JUSTIFIED))
+            #print('===', style)
+            s = sas.string[attrs.location:attrs.location+attrs.length]
+            bs = BabelString(s, style=style)
+            if bsResult is None:
+                bsResult = bs
+            else:
+                bsResult += bs
+        return bsResult
+
+    def fromBabelString(self, bs):
+        """
+
+        >>> bs = BabelString('abcd', style=dict(font='Roboto-Regular', fontSize=pt(18)))
+        >>> context = SketchContext()
+        >>> sas1 = context.fromBabelString(bs)
+        >>> sas1
+        <SketchAttributedString>
+        >>> sas2 = context.fromBabelString(bs)
+        >>> sas1 == sas2
+        True
+        """
+        assert isinstance(bs, BabelString)
+        ALIGNMENTS = {LEFT: 0, RIGHT: 1, CENTER: 2, JUSTIFIED: None}
+        cIndex = 0
+        sas = SketchAttributedString()
+        sas.string = ''
+        style = None
+        attrs = sas.attributes
+        for run in bs.runs:
+            if style is None or run.style is not None:
+                style = run.style
+            ssa = SketchStringAttribute()
+            ssa.location = cIndex
+            ssa.length = len(run.s)
+            sas.string += run.s
+            cIndex += ssa.length
+
+            ssa.attributes = SketchAttributes()
+            ssa.attributes.kerning = style.get('tracking', 0)
+            ssa.attributes.textStyleVerticalAlignmentKey = 0 # ???
+            ssa.attributes.paragraphStyle = SketchParagraphStyle()
+            ssa.attributes.paragraphStyle.alignment = ALIGNMENTS.get(style.get('xAlign', JUSTIFIED))
+
+            ssa.attributes.MSAttributedStringFontAttribute = SketchFontDescriptor()
+            fd = ssa.attributes.MSAttributedStringFontAttribute.attributes
+            fd.name = run.style.get('font', 'Verdana')
+            fd.size = upt(run.style.get('fontSize', 12))
+            tc = run.style.get('textFill', color(0))
+
+            ssa.attributes.MSAttributedStringColorAttribute = SketchColor(red=tc.r, green=tc.g, blue=tc.b, alpha=tc.a)
+            attrs.append(ssa)
+        return sas
 
 
 if __name__ == '__main__':
