@@ -148,7 +148,7 @@ class SketchContext(BaseContext):
             
             elif isinstance(layer, SketchText):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
-                newTextBox(self.asBabelString(layer.attributedString), name=layer.name, parent=e, 
+                newText(self.asBabelString(layer.attributedString), name=layer.name, parent=e, 
                     sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, textFill=fillColor)
 
             elif isinstance(layer, SketchBitmap):
@@ -163,7 +163,7 @@ class SketchContext(BaseContext):
             elif isinstance(layer, SketchSymbolInstance):
                 # For now only show the Symbol name.
                 frame = layer.frame
-                newTextBox('[%s]' % layer.name, name=layer.name, parent=e, 
+                newText('[%s]' % layer.name, name=layer.name, parent=e, 
                     sId=layer.do_objectID, fill=0.9, textFill=0, font='Verdana', fontSize=12,
                     x=frame.x, y=y, w=frame.w, h=frame.h)
 
@@ -187,7 +187,7 @@ class SketchContext(BaseContext):
         >>> page = doc[1]
         >>> e = page.elements[0]
         >>> e
-        TextBox:Type & styles ([137pt, 134pt], [518pt, 100pt]) S(13)
+        <Text $Type & sty...$ x=137pt y=134pt w=518pt h=100pt>
         """
         sketchPages = self.b.pages # Collect the list of SketchPage instance 
         doc.w, doc.h = self.b.size
