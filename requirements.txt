@@ -1,0 +1,2 @@
+pagebot
+git+https://github.com/PageBot/SketchApp2Py.git
