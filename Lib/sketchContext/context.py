@@ -149,7 +149,9 @@ class SketchContext(BaseContext):
             elif isinstance(layer, SketchText):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
                 newText(self.asBabelString(layer.attributedString), name=layer.name, parent=e, 
-                    sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, textFill=fillColor)
+                    sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, 
+                    yAlign=BASELINE, # Default Sketch text positioning
+                    textFill=fillColor)
 
             elif isinstance(layer, SketchBitmap):
                 # All internal Sketch file images are converted to .png
@@ -164,8 +166,8 @@ class SketchContext(BaseContext):
                 # For now only show the Symbol name.
                 frame = layer.frame
                 newText('[%s]' % layer.name, name=layer.name, parent=e, 
-                    sId=layer.do_objectID, fill=0.9, textFill=0, font='Verdana', fontSize=12,
-                    x=frame.x, y=y, w=frame.w, h=frame.h)
+                    sId=layer.do_objectID, fill=0.9, textFill=0, font='PageBot-Regular', fontSize=12,
+                    x=frame.x, y=y, w=frame.w, h=frame.h, yAligh=BASELINE)
 
             else:
                 print('Unsupported layer type', layer)
