@@ -43,7 +43,7 @@ from pagebot.constants import *
 from pagebot.toolbox.color import color
 from pagebot.toolbox.units import pt, units, upt
 
-from sketchcontext.builder import SketchBuilder
+from sketchcontext.sketchbuilder import SketchBuilder
 from sketchapp2py.sketchclasses import *
 
 class SketchContext(BaseContext):
@@ -78,7 +78,7 @@ class SketchContext(BaseContext):
         self.w = self.h = None # Optional default context size, overwriting the Sketch document.
 
     def setSize(self, w=None, h=None):
-        """Optional default document size. If not None, overwriting the size of the 
+        """Optional default document size. If not None, overwriting the size of the
         open Sketch document.
 
         >>> context = SketchContext()
@@ -135,35 +135,35 @@ class SketchContext(BaseContext):
                 child = newGroup(name=layer.name, parent=e, sId=layer.do_objectID,
                     x=frame.x, y=y, w=frame.w, h=frame.h)
                 self._createElements(layer, child)
-            
+
             elif isinstance(layer, SketchRectangle):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
-                newRect(name=layer.name, parent=e, sId=layer.do_objectID, 
+                newRect(name=layer.name, parent=e, sId=layer.do_objectID,
                     x=frame.x, y=y, w=frame.w, h=frame.h, fill=fillColor)
-            
+
             elif isinstance(layer, SketchOval):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
-                newOval(name=layer.name, parent=e, sId=layer.do_objectID, 
+                newOval(name=layer.name, parent=e, sId=layer.do_objectID,
                     x=frame.x, y=y, w=frame.w, h=frame.h, fill=fillColor)
-            
+
             elif isinstance(layer, SketchText):
                 fillColor = self._extractFill(sketchLayer) # Sketch color is defined in parent
-                newTextBox(self.asBabelString(layer.attributedString), name=layer.name, parent=e, 
+                newTextBox(self.asBabelString(layer.attributedString), name=layer.name, parent=e,
                     sId=layer.do_objectID, x=frame.x, y=y, w=frame.w, h=frame.h, textFill=fillColor)
 
             elif isinstance(layer, SketchBitmap):
                 # All internal Sketch file images are converted to .png
                 # SketchApp2Py converts the internal names with long id's to their object
                 # names and copies them into a parallel folder, indicated by self.b.api.sketchFile
-                path = self.b.api.sketchFile.imagesPath + layer.name + '.png' 
+                path = self.b.api.sketchFile.imagesPath + layer.name + '.png'
                 frame = layer.frame
                 newImage(path=path, name=layer.name, parent=e, sId=layer.do_objectID,
                     x=frame.x, y=y, w=frame.w, h=frame.h)
-            
+
             elif isinstance(layer, SketchSymbolInstance):
                 # For now only show the Symbol name.
                 frame = layer.frame
-                newTextBox('[%s]' % layer.name, name=layer.name, parent=e, 
+                newTextBox('[%s]' % layer.name, name=layer.name, parent=e,
                     sId=layer.do_objectID, fill=0.9, textFill=0, font='Verdana', fontSize=12,
                     x=frame.x, y=y, w=frame.w, h=frame.h)
 
@@ -172,8 +172,8 @@ class SketchContext(BaseContext):
 
     def readDocument(self, doc):
         """Read Page/Element instances from the SketchApi and fill the Document
-        instance doc with them, interpreting SketchPages as chapters and 
-        Sketch Artboards as PageBot pages.
+        instance doc with them, interpreting SketchPages as chapters and Sketch
+        Artboards as PageBot pages.
 
         >>> import sketchapp2py
         >>> from pagebot.document import Document
@@ -183,18 +183,18 @@ class SketchContext(BaseContext):
         >>> context = SketchContext(path=path) # Context now interacts with the default file.
         >>> # Create a PageBot Document instance, reading the current Sketch file data as source.
         >>> doc = Document(name='TestReadDocument')
-        >>> context.readDocument(doc) 
+        >>> context.readDocument(doc)
         >>> page = doc[1]
         >>> e = page.elements[0]
         >>> e
         TextBox:Type & styles ([137pt, 134pt], [518pt, 100pt]) S(13)
         """
-        sketchPages = self.b.pages # Collect the list of SketchPage instance 
+        sketchPages = self.b.pages # Collect the list of SketchPage instance
         doc.w, doc.h = self.b.size
         #assert doc.originTop # For now, make sure the origin of the document is set on top.
-        
+
         page = doc[1]
-        for pIndex, sketchPage in enumerate(sketchPages): 
+        for pIndex, sketchPage in enumerate(sketchPages):
             artboards = sketchPage.layers
             for artboard in artboards:
                 page.w = artboard.frame.w
@@ -206,7 +206,7 @@ class SketchContext(BaseContext):
                 page = page.next
 
     def save(self, path=None):
-        """Save the current builder data into Sketch file, indicated by path. 
+        """Save the current builder data into Sketch file, indicated by path.
         >>> import sketchapp2py
         >>> from sketchapp2py.sketchappcompare import sketchCompare
         >>> from pagebot.toolbox.transformer import path2Dir
@@ -215,7 +215,7 @@ class SketchContext(BaseContext):
         >>> exportDir = path2Dir(sketchapp2py.__file__) + '/_export/'
         >>> if not os.path.exists(exportDir):
         ...     os.path.mkdir(exportDir)
-        >>> savePath = exportDir + 'TemplateSquare.sketch'        
+        >>> savePath = exportDir + 'TemplateSquare.sketch'
         >>> context.save(savePath)
         >>> sketchCompare(readPath, savePath)
         []
@@ -283,8 +283,8 @@ class SketchContext(BaseContext):
         >>> sas == sas2 # Bi-directional conversion works
         True
         >>> # Now change the BabelString
-        >>> bs.runs[0].style['font'] = 'Verdana-Bold' 
-        >>> bs.runs[1].style['font'] = 'Verdana-Italic' 
+        >>> bs.runs[0].style['font'] = 'Verdana-Bold'
+        >>> bs.runs[1].style['font'] = 'Verdana-Italic'
         >>> bs.runs[1].style['textFill'] = color(1, 0, 0)
         >>> bs.runs[2].style['textFill'] = color(1, 0, 0.5)
         >>> bs.runs[2].s = ' changed' # Change text of the run
@@ -306,8 +306,8 @@ class SketchContext(BaseContext):
             verticalAlignment = attrs.attributes.textStyleVerticalAlignmentKey
             tracking = attrs.attributes.kerning # Wrong Sketch name for tracking
             paragraphStyle = attrs.attributes.paragraphStyle
-            
-            style = dict(font=fd.name, fontSize=pt(fd.size), textFill=textFill, 
+
+            style = dict(font=fd.name, fontSize=pt(fd.size), textFill=textFill,
                 tracking=tracking, xAlign=ALIGNMENTS.get(paragraphStyle.alignment, JUSTIFIED))
             #print('===', style)
             s = sas.string[attrs.location:attrs.location+attrs.length]
