@@ -187,7 +187,7 @@ class SketchContext(BaseContext):
         >>> page = doc[1]
         >>> e = page.elements[0]
         >>> e
-        TextBox:Type & styles ([137pt, 134pt], [518pt, 100pt]) S(13)
+        <Text $Type & sty...$ x=137pt y=134pt w=518pt h=100pt>
         """
         sketchPages = self.b.pages # Collect the list of SketchPage instance
         doc.w, doc.h = self.b.size
