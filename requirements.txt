@@ -1,2 +1,2 @@
 pagebot
-git+https://github.com/PageBot/SketchApp2Py.git
+git+https://github.com/PageBot/PySketch.git

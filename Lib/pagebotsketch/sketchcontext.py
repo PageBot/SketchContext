@@ -44,7 +44,7 @@ from pagebot.toolbox.color import color
 from pagebot.toolbox.units import pt, units, upt
 
 from pagebotsketch.sketchbuilder import SketchBuilder
-from sketchapp2py.sketchclasses import *
+from pysketch.sketchclasses import *
 
 class SketchContext(BaseContext):
 
@@ -55,10 +55,10 @@ class SketchContext(BaseContext):
     def __init__(self, path=None):
         """Constructor of Sketch context.
 
-        >>> import sketchapp2py
+        >>> import pysketch
         >>> from pagebot.toolbox.transformer import path2Dir
         >>> from pagebot.document import Document
-        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> path = path2Dir(pysketch.__file__) + '/Resources/TemplateSquare.sketch'
         >>> context = SketchContext(path) # Context now interacts with the file.
         >>> # Create a PageBot Document instance, reading the Sketch file data as source.
         >>> doc = Document()
@@ -94,12 +94,12 @@ class SketchContext(BaseContext):
     def setPath(self, path):
         """Set the self.b builder to SketchBuilder(parth), answering self.b.api.
 
-        >>> import sketchapp2py
+        >>> import pysketch
         >>> context = SketchContext() # Context now interacts with the default Resource file.
         >>> context.b.api.filePath.split('/')[-1]
         'Template.sketch'
         >>> from pagebot.toolbox.transformer import path2Dir
-        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> path = path2Dir(pysketch.__file__) + '/Resources/TemplateSquare.sketch'
         >>> api = context.setPath(path)
         >>> api.filePath.split('/')[-1] # Listening to another file now.
         'TemplateSquare.sketch'
@@ -175,11 +175,11 @@ class SketchContext(BaseContext):
         instance doc with them, interpreting SketchPages as chapters and Sketch
         Artboards as PageBot pages.
 
-        >>> import sketchapp2py
+        >>> import pysketch
         >>> from pagebot.document import Document
         >>> from pagebot.toolbox.transformer import path2Dir
         >>> from pagebot.document import Document
-        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateText.sketch'
+        >>> path = path2Dir(pysketch.__file__) + '/Resources/TemplateText.sketch'
         >>> context = SketchContext(path=path) # Context now interacts with the default file.
         >>> # Create a PageBot Document instance, reading the current Sketch file data as source.
         >>> doc = Document(name='TestReadDocument')
@@ -207,12 +207,12 @@ class SketchContext(BaseContext):
 
     def save(self, path=None):
         """Save the current builder data into Sketch file, indicated by path.
-        >>> import sketchapp2py
-        >>> from sketchapp2py.sketchappcompare import sketchCompare
+        >>> import pysketch
+        >>> from pysketch.sketchappcompare import sketchCompare
         >>> from pagebot.toolbox.transformer import path2Dir
-        >>> readPath = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateSquare.sketch'
+        >>> readPath = path2Dir(pysketch.__file__) + '/Resources/TemplateSquare.sketch'
         >>> context = SketchContext(readPath) # Context now interacts with the reader file.
-        >>> exportDir = path2Dir(sketchapp2py.__file__) + '/_export/'
+        >>> exportDir = path2Dir(pysketch.__file__) + '/_export/'
         >>> if not os.path.exists(exportDir):
         ...     os.path.mkdir(exportDir)
         >>> savePath = exportDir + 'TemplateSquare.sketch'
@@ -259,10 +259,10 @@ class SketchContext(BaseContext):
         * https://developer.apple.com/documentation/foundation/nsattributedstring
         * https://developer.apple.com/documentation/coretext/ctframesetter-2eg
 
-        >>> import sketchapp2py
-        >>> from sketchapp2py.sketchapi import SketchApi
+        >>> import pysketch
+        >>> from pysketch.sketchapi import SketchApi
         >>> from pagebot.toolbox.transformer import path2Dir
-        >>> path = path2Dir(sketchapp2py.__file__) + '/Resources/TemplateText.sketch'
+        >>> path = path2Dir(pysketch.__file__) + '/Resources/TemplateText.sketch'
         >>> context = SketchContext(path)
         >>> skTextBox = context.b.artboards[0].layers[0] # Find the Sketch text box
         >>> sas = skTextBox.attributedString # SketchText inside the box
